@@ -1,7 +1,10 @@
 import sqlite3
 import pandas as pd
+import os
 
-db_connection = sqlite3.connect('../../data/raw/db_zkill')
+_db_conn_path = os.path.abspath('/Users/80932462/repos/web_scraper/data/raw/db_zkill.db')
+
+db_connection = sqlite3.connect(_db_conn_path)
 db_cursor = db_connection.cursor()
 
 db_cursor.execute('''

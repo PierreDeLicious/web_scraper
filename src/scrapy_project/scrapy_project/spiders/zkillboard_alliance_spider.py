@@ -30,11 +30,11 @@ class ZKillboardSpider(scrapy.Spider):
         if count_km < 1:
             try:
                 with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
-                    query_insert_km = "INSERT INTO kill_mail (km_id, km_system, km_region, km_time) VALUES (" + \
-                                        str(km_id_value) + "," + \
-                                        str(km_system_value) + "," + \
-                                        str(km_region_value) + "," + \
-                                        str(km_time_value) + ")"
+                    query_insert_km = "INSERT INTO kill_mail (km_id, km_system, km_region, km_time) VALUES ('" + \
+                                        self.escape_single_quote(str(km_id_value)) + "', '" + \
+                                        self.escape_single_quote(str(km_system_value)) + "', '" + \
+                                        self.escape_single_quote(str(km_region_value)) + "', '" + \
+                                        self.escape_single_quote(str(km_time_value)) + "')"
                     db_connection.cursor().execute(query_insert_km)
             except dbapi2.Error as exc:
                 self.logger.warn("dbapi2 exception encountered: %s" % exc)
@@ -47,12 +47,12 @@ class ZKillboardSpider(scrapy.Spider):
     def insert_pilot(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value):
         try:
             with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
-                query_insert_pilot = "INSERT INTO km_pilot (km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance) VALUES (" + \
-                                        str(km_id_value) + "," + \
-                                        str(pilot_name_value) + "," + \
-                                        str(pilot_ship_value) + "," + \
-                                        str(pilot_corporation_value) + "," + \
-                                        str(pilot_alliance_value) + ")"
+                query_insert_pilot = "INSERT INTO km_pilot (km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance) VALUES ('" + \
+                                        self.escape_single_quote(str(km_id_value)) + "', '" + \
+                                        self.escape_single_quote(str(pilot_name_value)) + "', '" + \
+                                        self.escape_single_quote(str(pilot_ship_value)) + "', '" + \
+                                        self.escape_single_quote(str(pilot_corporation_value)) + "', '" + \
+                                        self.escape_single_quote(str(pilot_alliance_value)) + "');"
                 db_connection.cursor().execute(query_insert_pilot)
         except dbapi2.Error as exc:
             self.logger.warn("dbapi2 exception encountered: %s" % exc)
@@ -62,16 +62,16 @@ class ZKillboardSpider(scrapy.Spider):
     def insert_pilot_with_km(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value, km_system_value, km_region_value, km_time_value):
         try:
             with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
-                query_insert_pilot_with_km = "INSERT INTO km_pilot (pilot_km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance, km_id, km_system, km_region, km_time) VALUES (" + \
-                                                str(uuid.uuid4()) + "," + \
-                                                str(pilot_name_value) + "," + \
-                                                str(pilot_ship_value) + "," + \
-                                                str(pilot_corporation_value) + "," + \
-                                                str(pilot_alliance_value) + "," + \
-                                                str(km_id_value) + "," + \
-                                                str(km_system_value) + "," + \
-                                                str(km_region_value) + "," + \
-                                                str(km_time_value) + ")"
+                query_insert_pilot_with_km = "INSERT INTO km_pilot (pilot_km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance, km_id, km_system, km_region, km_time) VALUES ('" + \
+                                                 self.escape_single_quote(str(uuid.uuid4())) + "', '" + \
+                                                 self.escape_single_quote(str(pilot_name_value)) + "', '" + \
+                                                 self.escape_single_quote(str(pilot_ship_value)) + "', '" + \
+                                                 self.escape_single_quote(str(pilot_corporation_value)) + "', '" + \
+                                                 self.escape_single_quote(str(pilot_alliance_value)) + "', '" + \
+                                                 self.escape_single_quote(str(km_id_value)) + "', '" + \
+                                                 self.escape_single_quote(str(km_system_value)) + "', '" + \
+                                                 self.escape_single_quote(str(km_region_value)) + "', '" + \
+                                                 self.escape_single_quote(str(km_time_value)) + "');"
                 db_connection.cursor().execute(query_insert_pilot_with_km)
         except dbapi2.Error as exc:
             self.logger.warn("dbapi2 exception encountered: %s" % exc)
