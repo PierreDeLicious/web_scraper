@@ -21,12 +21,13 @@ db_cursor.execute('''
 
 db_cursor.execute('''
           CREATE TABLE IF NOT EXISTS km_pilot
-          ( [km_id] TEXT NOT NULL, 
+          ( [pilot_km_id] TEXT NOT NULL,
+            [km_id] TEXT NOT NULL, 
             [pilot_name] TEXT NOT NULL, 
             [pilot_ship] TEXT NOT NULL, 
             [pilot_corporation] TEXT NOT NULL, 
             [pilot_alliance] TEXT NOT NULL,
-            PRIMARY KEY (km_id, pilot_name),
+            PRIMARY KEY (pilot_km_id),
             FOREIGN KEY (km_id) REFERENCES kill_mail (km_id) 
             ON DELETE CASCADE ON UPDATE NO ACTION)
           ''')

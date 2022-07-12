@@ -47,7 +47,8 @@ class ZKillboardSpider(scrapy.Spider):
     def insert_pilot(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value):
         try:
             with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
-                query_insert_pilot = "INSERT INTO km_pilot (km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance) VALUES ('" + \
+                query_insert_pilot = "INSERT INTO km_pilot (pilot_km_id, km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance) VALUES ('" + \
+                                        self.escape_single_quote(str(uuid.uuid4())) + "', '" + \
                                         self.escape_single_quote(str(km_id_value)) + "', '" + \
                                         self.escape_single_quote(str(pilot_name_value)) + "', '" + \
                                         self.escape_single_quote(str(pilot_ship_value)) + "', '" + \
@@ -56,13 +57,15 @@ class ZKillboardSpider(scrapy.Spider):
                 db_connection.cursor().execute(query_insert_pilot)
         except dbapi2.Error as exc:
             self.logger.warn("dbapi2 exception encountered: %s" % exc)
+            self.logger.warn("pilot name: %s" % pilot_name_value)
+            self.logger.warn("km id: %s" % km_id_value)
 
         return km_id_value
 
     def insert_pilot_with_km(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value, km_system_value, km_region_value, km_time_value):
         try:
             with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
-                query_insert_pilot_with_km = "INSERT INTO km_pilot (pilot_km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance, km_id, km_system, km_region, km_time) VALUES ('" + \
+                query_insert_pilot_with_km = "INSERT INTO km_pilot_with_kill_mail (pilot_km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance, km_id, km_system, km_region, km_time) VALUES ('" + \
                                                  self.escape_single_quote(str(uuid.uuid4())) + "', '" + \
                                                  self.escape_single_quote(str(pilot_name_value)) + "', '" + \
                                                  self.escape_single_quote(str(pilot_ship_value)) + "', '" + \

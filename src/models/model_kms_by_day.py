@@ -14,12 +14,21 @@ try:
 except dbapi2.Error as exc:
     print("Comdb2 exception encountered: %s" % exc)
 
-df_pilots = pd.DataFrame(columns=['km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance'])
+df_pilots = pd.DataFrame(columns=['pilot_km_id', 'km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance'])
 
 try:
     with closing(dbapi2.connect(_db_conn_path, isolation_level=None)) as db_connection:
-        query = "SELECT * FROM kill_pilot"
-        df_pilots = pd.DataFrame(db_connection.cursor().execute(query), columns=['km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance'])
+        query = "SELECT * FROM km_pilot"
+        df_pilots = pd.DataFrame(db_connection.cursor().execute(query), columns=['pilot_km_id', 'km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance'])
+except dbapi2.Error as exc:
+    print("Comdb2 exception encountered: %s" % exc)
+
+df_pilots_km = pd.DataFrame(columns=['pilot_km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance', 'km_id', 'km_system', 'km_region', 'km_time'])
+
+try:
+    with closing(dbapi2.connect(_db_conn_path, isolation_level=None)) as db_connection:
+        query = "SELECT * FROM km_pilot_with_kill_mail"
+        df_pilots_km = pd.DataFrame(db_connection.cursor().execute(query), columns=['pilot_km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance', 'km_id', 'km_system', 'km_region', 'km_time'])
 except dbapi2.Error as exc:
     print("Comdb2 exception encountered: %s" % exc)
 
@@ -40,12 +49,10 @@ df_pilots['km_id'] = df_pilots['km_id'].astype(str)
 
 df_stats = df_pilots.merge(df_kms, on='km_id', how='outer')
 
-print(df_pilots.dtypes)
-print(df_kms.dtypes)
-
 print(df_kms)
 print(df_pilots)
 print(df_stats)
+print(df_pilots_km)
 
 print('df_kms has a size of: ' + str(df_kms.size) + ' with the following cols: ' + ' '.join(df_kms.columns))
 print('df_pilots has a size of: ' + str(df_pilots.size) + ' with the following cols: ' + ' '.join(df_pilots.columns))
