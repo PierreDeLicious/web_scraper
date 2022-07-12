@@ -2,45 +2,80 @@ from io import StringIO
 import scrapy
 from lxml import etree
 import uuid
-import sqlite3
+import os
+from sqlite3 import dbapi2
+from contextlib import closing
 
 
 class ZKillboardSpider(scrapy.Spider):
     name = "zkillboard_alliance"
     _url = 'https://zkillboard.com'
+    _db_conn_path = os.path.abspath('/Users/80932462/repos/web_scraper/data/raw/db_zkill.db')
 
     def escape_single_quote(self, string_value):
-        return string_value.replace("'", "''")
+        return str(string_value.replace("'", "''"))
 
-    def km_insert(self, km_id_value, km_system_value, km_region_value, km_time_value):
-        db_connection = sqlite3.connect('/Users/80932462/repos/web_scraper/data/raw/db_zkill')
-        db_cursor = db_connection.cursor()
+    def insert_km(self, km_id_value, km_system_value, km_region_value, km_time_value):
         km_already_existed = False
 
-        count_km = \
-            db_cursor.execute('SELECT count(*) FROM kill_mail WHERE km_id = \'' + km_id_value + '\'').fetchall()[0][
-                0]
+        count_km = 0
+
+        try:
+            with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
+                query_count = "SELECT COUNT(*) FROM kill_mail WHERE km_id = " + str(km_id_value)
+                count_km = db_connection.cursor().execute(query_count).fetchall()[0][0]
+        except dbapi2.Error as exc:
+            self.logger.warn("dbapi2 exception encountered: %s" % exc)
 
         if count_km < 1:
-            db_cursor.execute(
-                'INSERT INTO kill_mail (km_id, km_system, km_region, km_time) VALUES (\'' + km_id_value + '\',\'' + self.escape_single_quote(km_system_value) + '\',\'' + self.escape_single_quote(km_region_value) + '\',\'' + self.escape_single_quote(km_time_value) + '\')')
+            try:
+                with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
+                    query_insert_km = "INSERT INTO kill_mail (km_id, km_system, km_region, km_time) VALUES (" + \
+                                        str(km_id_value) + "," + \
+                                        str(km_system_value) + "," + \
+                                        str(km_region_value) + "," + \
+                                        str(km_time_value) + ")"
+                    db_connection.cursor().execute(query_insert_km)
+            except dbapi2.Error as exc:
+                self.logger.warn("dbapi2 exception encountered: %s" % exc)
         else:
             self.logger.info('This KM is already recorded %s', km_id_value)
             km_already_existed = True
 
-        db_connection.commit()
-        db_connection.close()
         return km_already_existed
 
-    def pilot_insert(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value):
-        db_connection = sqlite3.connect('/Users/80932462/repos/web_scraper/data/raw/db_zkill')
-        db_cursor = db_connection.cursor()
+    def insert_pilot(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value):
+        try:
+            with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
+                query_insert_pilot = "INSERT INTO km_pilot (km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance) VALUES (" + \
+                                        str(km_id_value) + "," + \
+                                        str(pilot_name_value) + "," + \
+                                        str(pilot_ship_value) + "," + \
+                                        str(pilot_corporation_value) + "," + \
+                                        str(pilot_alliance_value) + ")"
+                db_connection.cursor().execute(query_insert_pilot)
+        except dbapi2.Error as exc:
+            self.logger.warn("dbapi2 exception encountered: %s" % exc)
 
-        db_cursor.execute(
-                'INSERT INTO km_pilot (km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance) VALUES (\'' + km_id_value + '\',\'' + self.escape_single_quote(pilot_name_value) + '\',\'' + self.escape_single_quote(pilot_ship_value) + '\',\'' + self.escape_single_quote(pilot_corporation_value) + '\',\'' + self.escape_single_quote(pilot_alliance_value) + '\')')
+        return km_id_value
 
-        db_connection.commit()
-        db_connection.close()
+    def insert_pilot_with_km(self, km_id_value, pilot_name_value, pilot_corporation_value, pilot_alliance_value, pilot_ship_value, km_system_value, km_region_value, km_time_value):
+        try:
+            with closing(dbapi2.connect(self._db_conn_path, isolation_level=None)) as db_connection:
+                query_insert_pilot_with_km = "INSERT INTO km_pilot (pilot_km_id, pilot_name, pilot_ship, pilot_corporation, pilot_alliance, km_id, km_system, km_region, km_time) VALUES (" + \
+                                                str(uuid.uuid4()) + "," + \
+                                                str(pilot_name_value) + "," + \
+                                                str(pilot_ship_value) + "," + \
+                                                str(pilot_corporation_value) + "," + \
+                                                str(pilot_alliance_value) + "," + \
+                                                str(km_id_value) + "," + \
+                                                str(km_system_value) + "," + \
+                                                str(km_region_value) + "," + \
+                                                str(km_time_value) + ")"
+                db_connection.cursor().execute(query_insert_pilot_with_km)
+        except dbapi2.Error as exc:
+            self.logger.warn("dbapi2 exception encountered: %s" % exc)
+
         return km_id_value
 
     def start_requests(self):
@@ -50,7 +85,7 @@ class ZKillboardSpider(scrapy.Spider):
             '99009569',
         ]
 
-        for i in range(10):
+        for i in range(2):
             for alliance in alliances:
                 yield scrapy.Request(url=self._url + '/alliance/' + alliance + '/page/' + str(i + 1) + '/',
                                      callback=self.parse_alliance)
@@ -66,7 +101,7 @@ class ZKillboardSpider(scrapy.Spider):
         pilots = response.xpath('//tr[@class=\'attacker\']').getall()
         km_id = response.url[28:len(response.url) - 1]
 
-        km_already_existed = self.km_insert(str(km_id), str(system), str(region), str(time))
+        km_already_existed = self.insert_km(km_id, system, region, time)
 
         if km_already_existed is False:
             for pilot in pilots:
@@ -86,4 +121,5 @@ class ZKillboardSpider(scrapy.Spider):
                     pilot_alliance = pilot_infos[1]
                     pilot_ship = pilot_infos[0]
 
-                self.pilot_insert(str(km_id), str(pilot_name), str(pilot_corporation), str(pilot_alliance), str(pilot_ship))
+                self.insert_pilot(km_id, pilot_name, pilot_corporation, pilot_alliance, pilot_ship)
+                self.insert_pilot_with_km(km_id, pilot_name, pilot_corporation, pilot_alliance, pilot_ship, system, region, time)

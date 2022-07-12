@@ -7,6 +7,7 @@ name = "pypi"
 scrapy = "*"
 lxml = "*"
 pandas = "*"
+psutil = "*"
 
 [dev-packages]
 
