@@ -57,4 +57,4 @@ print(df_pilots_km)
 print('df_kms has a size of: ' + str(df_kms.size) + ' with the following cols: ' + ' '.join(df_kms.columns))
 print('df_pilots has a size of: ' + str(df_pilots.size) + ' with the following cols: ' + ' '.join(df_pilots.columns))
 
-print('df_stats has a size of: ' + str(df_stats.size) + ' with the following cols: ' + ' '.join(df_stats.columns))
+print('df_pilots_km has a size of: ' + str(df_pilots_km.size) + ' with the following cols: ' + ' '.join(df_pilots_km.columns))

@@ -88,7 +88,7 @@ class ZKillboardSpider(scrapy.Spider):
             '99009569',
         ]
 
-        for i in range(2):
+        for i in range(11):
             for alliance in alliances:
                 yield scrapy.Request(url=self._url + '/alliance/' + alliance + '/page/' + str(i + 1) + '/',
                                      callback=self.parse_alliance)
