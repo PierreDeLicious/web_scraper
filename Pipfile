@@ -8,6 +8,7 @@ scrapy = "*"
 lxml = "*"
 pandas = "*"
 psutil = "*"
+openpyxl = "*"
 
 [dev-packages]
 

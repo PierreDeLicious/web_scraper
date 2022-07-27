@@ -89,10 +89,12 @@ class ZKillboardSpider(scrapy.Spider):
             '701459600',
             '99009569',
             '1644918530',
-            '1614483120'
+            '1614483120',
+            '431502563',
+            '102377308'
         ]
 
-        for i in range(11):
+        for i in range(2):
             for alliance in alliances:
                 yield scrapy.Request(url=self._url + '/alliance/' + alliance + '/page/' + str(i + 1) + '/',
                                      callback=self.parse_alliance)
@@ -100,6 +102,14 @@ class ZKillboardSpider(scrapy.Spider):
     def parse_alliance(self, response):
         for kill_mail in response.xpath('//tr[contains(@class, \'killListRow\')]/td[1]/a/@href').getall():
             yield scrapy.Request(url=self._url + kill_mail, callback=self.parse_kill_mail)
+
+    def print_pilot_info(self, pilot_infos, km_link):
+        print('weird data point: ' + km_link)
+        i = 0
+        for info in pilot_infos:
+            print(str(i) + ': ' + info)
+            i += 1
+
 
     def parse_kill_mail(self, response):
         system = response.xpath('//th[text()=\'System:\']/../td/a[1]/text()').get()
@@ -115,8 +125,20 @@ class ZKillboardSpider(scrapy.Spider):
                 parser = etree.XMLParser(recover=True)
                 element = etree.parse(StringIO(pilot), parser)
 
+                pilot_info_imgs = element.xpath('//img/@src')
+                is_eve_question = False
+                for pilot_info_img in pilot_info_imgs:
+                    if str(pilot_info_img).__contains__('eve_question.png'):
+                        is_eve_question = True
+
                 pilot_infos = element.xpath('//td[@class=\'pilotinfo\']//a/text()')
-                if len(pilot_infos) == 9 or len(pilot_infos) == 8 or len(pilot_infos) == 7:
+
+                if is_eve_question:
+                    pilot_name = pilot_infos[0]
+                    pilot_corporation = pilot_infos[1]
+                    pilot_alliance = pilot_infos[3]
+                    pilot_ship = 'na'
+                elif len(pilot_infos) == 9 or len(pilot_infos) == 8 or len(pilot_infos) == 7:
                     pilot_name = pilot_infos[0]
                     pilot_corporation = pilot_infos[2]
                     pilot_alliance = pilot_infos[4]
@@ -143,6 +165,9 @@ class ZKillboardSpider(scrapy.Spider):
                     for info in pilot_infos:
                         print(str(i) + ' ' + info)
                         i += 1
+
+                if pilot_alliance == 'Ongpatonga':
+                    self.print_pilot_info(pilot_infos, response.url)
 
                 self.insert_pilot(km_id, pilot_name, pilot_corporation, pilot_alliance, pilot_ship)
                 self.insert_pilot_with_km(km_id, pilot_name, pilot_corporation, pilot_alliance, pilot_ship, system,

@@ -4,24 +4,7 @@ import os
 import pandas as pd
 
 _db_conn_path = os.path.abspath('/Users/80932462/repos/web_scraper/data/raw/db_zkill.db')
-
-df_kms = pd.DataFrame(columns=['km_id', 'km_system', 'km_region', 'km_time'])
-
-try:
-    with closing(dbapi2.connect(_db_conn_path, isolation_level=None)) as db_connection:
-        query = "SELECT * FROM kill_mail"
-        df_kms = pd.DataFrame(db_connection.cursor().execute(query), columns=['km_id', 'km_system', 'km_region', 'km_time'])
-except dbapi2.Error as exc:
-    print("Comdb2 exception encountered: %s" % exc)
-
-df_pilots = pd.DataFrame(columns=['pilot_km_id', 'km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance'])
-
-try:
-    with closing(dbapi2.connect(_db_conn_path, isolation_level=None)) as db_connection:
-        query = "SELECT * FROM km_pilot"
-        df_pilots = pd.DataFrame(db_connection.cursor().execute(query), columns=['pilot_km_id', 'km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance'])
-except dbapi2.Error as exc:
-    print("Comdb2 exception encountered: %s" % exc)
+_reports_path = os.path.abspath('/Users/80932462/repos/web_scraper/data/reports/')
 
 df_pilots_km = pd.DataFrame(columns=['pilot_km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance', 'km_id', 'km_system', 'km_region', 'km_time'])
 
@@ -32,29 +15,22 @@ try:
 except dbapi2.Error as exc:
     print("Comdb2 exception encountered: %s" % exc)
 
-df_kms['Day'] = df_kms['km_time']
+print('df_pilots_km has a size of: ' + str(df_pilots_km.size) + ' with the following cols: ' + ', '.join(df_pilots_km.columns))
 
-df_kms['km_time'] = pd.to_datetime(df_kms['km_time'])
-df_kms['day_of_week'] = df_kms['km_time'].dt.day_name()
-df_kms['hour_of_day'] = df_kms['km_time'].dt.hour
+df_pilots_km['Day'] = df_pilots_km['km_time']
 
-df_kms['km_id'] = df_kms['km_id'].astype(str)
-df_pilots['km_id'] = df_pilots['km_id'].astype(str)
+df_pilots_km['km_time'] = pd.to_datetime(df_pilots_km['km_time'])
+df_pilots_km['day_of_week'] = df_pilots_km['km_time'].dt.day_name()
+df_pilots_km['hour_of_day'] = df_pilots_km['km_time'].dt.hour
 
+df_pilots_km['km_id'] = df_pilots_km['km_id'].astype(str)
 
-# df_grouped = df_kms.groupby(['day_of_week', 'hour_of_day'])['hour_of_day'].count()
-# print(df_grouped)
+df_active_pilots_during_peek_hours = df_pilots_km[(df_pilots_km['hour_of_day'] >= 19) & (df_pilots_km['hour_of_day'] <= 22)]
 
-#df_stats = df_pilots.join(df_kms, on='km_id')
+print('df_active_pilots_during_peek_hours has a size of: ' + str(df_active_pilots_during_peek_hours.size))
+print(df_active_pilots_during_peek_hours.head())
 
-df_stats = df_pilots.merge(df_kms, on='km_id', how='outer')
+df_results = df_active_pilots_during_peek_hours.groupby(['pilot_alliance', 'pilot_corporation'])['pilot_name'].nunique().sort_values(ascending=False)
 
-print(df_kms)
-print(df_pilots)
-print(df_stats)
-print(df_pilots_km)
-
-print('df_kms has a size of: ' + str(df_kms.size) + ' with the following cols: ' + ' '.join(df_kms.columns))
-print('df_pilots has a size of: ' + str(df_pilots.size) + ' with the following cols: ' + ' '.join(df_pilots.columns))
-
-print('df_pilots_km has a size of: ' + str(df_pilots_km.size) + ' with the following cols: ' + ' '.join(df_pilots_km.columns))
+print(df_results.sort_values(ascending=False))
+df_results.to_excel(_reports_path+'/most_active_corps.xlsx')
