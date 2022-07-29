@@ -6,12 +6,14 @@ import pandas as pd
 _db_conn_path = os.path.abspath('/Users/80932462/repos/web_scraper/data/raw/db_zkill.db')
 _reports_path = os.path.abspath('/Users/80932462/repos/web_scraper/data/reports/')
 
-df_pilots_km = pd.DataFrame(columns=['pilot_km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance', 'km_id', 'km_system', 'km_region', 'km_time'])
+columns = ['pilot_km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance', 'km_id', 'km_system', 'km_region', 'km_time', 'km_is_main']
+
+df_pilots_km = pd.DataFrame(columns=columns)
 
 try:
     with closing(dbapi2.connect(_db_conn_path, isolation_level=None)) as db_connection:
         query = "SELECT * FROM km_pilot_with_kill_mail"
-        df_pilots_km = pd.DataFrame(db_connection.cursor().execute(query), columns=['pilot_km_id', 'pilot_name', 'pilot_ship', 'pilot_corporation', 'pilot_alliance', 'km_id', 'km_system', 'km_region', 'km_time'])
+        df_pilots_km = pd.DataFrame(db_connection.cursor().execute(query), columns=columns)
 except dbapi2.Error as exc:
     print("Comdb2 exception encountered: %s" % exc)
 
@@ -33,4 +35,7 @@ print(df_active_pilots_during_peek_hours.head())
 df_results = df_active_pilots_during_peek_hours.groupby(['pilot_alliance', 'pilot_corporation'])['pilot_name'].nunique().sort_values(ascending=False)
 
 print(df_results.sort_values(ascending=False))
-df_results.to_excel(_reports_path+'/most_active_corps.xlsx')
+
+with pd.ExcelWriter(_reports_path+'/most_active_corps.xlsx') as writer:
+    df_results.to_excel(writer, sheet_name='most_active_corpos')
+    df_pilots_km.to_excel(writer, sheet_name='data')

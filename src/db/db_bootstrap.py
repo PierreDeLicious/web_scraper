@@ -20,19 +20,6 @@ db_cursor.execute('''
         ''')
 
 db_cursor.execute('''
-          CREATE TABLE IF NOT EXISTS km_pilot
-          ( [pilot_km_id] TEXT NOT NULL,
-            [km_id] TEXT NOT NULL, 
-            [pilot_name] TEXT NOT NULL, 
-            [pilot_ship] TEXT NOT NULL, 
-            [pilot_corporation] TEXT NOT NULL, 
-            [pilot_alliance] TEXT NOT NULL,
-            PRIMARY KEY (pilot_km_id),
-            FOREIGN KEY (km_id) REFERENCES kill_mail (km_id) 
-            ON DELETE CASCADE ON UPDATE NO ACTION)
-          ''')
-
-db_cursor.execute('''
           CREATE TABLE IF NOT EXISTS km_pilot_with_kill_mail
           ( [pilot_km_id] TEXT NOT NULL,
             [pilot_name] TEXT NOT NULL, 
@@ -42,7 +29,8 @@ db_cursor.execute('''
             [km_id] TEXT NOT NULL,
             [km_system] TEXT NOT NULL, 
             [km_region] TEXT NOT NULL, 
-            [km_time] TEXT NOT NULL,
+            [km_time] TEXT NOT NULL, 
+            [km_is_main] BOOLEAN NOT NULL,
             PRIMARY KEY (pilot_km_id))
           ''')
 
